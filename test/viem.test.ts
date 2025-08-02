@@ -1,15 +1,5 @@
 import {describe, test} from '@jest/globals';
-import {
-    createTestClient,
-    erc20Abi, formatUnits,
-    http,
-    keccak256,
-    parseEther,
-    parseGwei,
-    publicActions,
-    stringToHex,
-    walletActions
-} from 'viem'
+import {createTestClient, erc20Abi, formatUnits, http, keccak256, publicActions, stringToHex, walletActions} from 'viem'
 import {foundry} from 'viem/chains'
 import {privateKeyToAccount} from "viem/accounts";
 import {eip712abi} from "../src/eip712abi.ts";
@@ -138,9 +128,50 @@ describe.skip('viem test', () => {
 
 });
 
-describe.skip('tap2pay Card Self Service', () => {
+describe('tap2pay Card Self Service', () => {
 
-    test('Register Card', async () => {
+    test('Query Card', async () => {
+
+        /*
+        * Testing Variable
+        * */
+        const account = privateKeyToAccount('0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80')
+
+        /*
+        * Testing Component
+        * */
+        const testClient = createTestClient({
+            account,
+            chain: foundry,
+            mode: 'anvil',
+            transport: http(),
+        })
+            .extend(publicActions)
+            .extend(walletActions)
+
+
+        const signature = await account.signMessage({message: "CARD_QUERY"})
+
+        console.log({signature})
+
+        /*
+       * Validate EIP712 to Backend
+       * */
+        const cardListResponse = await fetch("http://localhost:8080/api/tap2pay/cards", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'text/plain',
+                'Accept': 'application/json',
+            },
+            body: signature
+        });
+
+        const responseText = await cardListResponse.text();
+
+        console.log({result: cardListResponse.statusText, responseText})
+    })
+
+    test.skip('Register Card', async () => {
 
         /*
         * Testing Variable
@@ -220,7 +251,7 @@ describe.skip('tap2pay Card Self Service', () => {
         console.log({result: cardRegisterResponse.statusText, responseText})
     })
 
-    test('Access Card', async () => {
+    test.skip('Access Card', async () => {
 
         /*
         * Testing Variable
@@ -301,7 +332,7 @@ describe.skip('tap2pay Card Self Service', () => {
     })
 });
 
-describe('Gas Estimation', () => {
+describe.skip('Gas Estimation', () => {
 
     test('Access Card', async () => {
 
@@ -331,7 +362,7 @@ describe('Gas Estimation', () => {
             gasPrice,
             gas,
             fee: gas * gasPrice,
-            feeInEther:  formatUnits(gas * gasPrice, 18)
+            feeInEther: formatUnits(gas * gasPrice, 18)
         })
 
     })
