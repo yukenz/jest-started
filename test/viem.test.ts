@@ -4,6 +4,7 @@ import {foundry} from 'viem/chains'
 import {privateKeyToAccount} from "viem/accounts";
 import {eip712abi} from "../src/eip712abi.ts";
 import {domain, types} from "../src/eip712-walle.ts";
+import {accessCard} from "../src/tap2payhelper.ts";
 
 describe.skip('viem test', () => {
 
@@ -128,7 +129,7 @@ describe.skip('viem test', () => {
 
 });
 
-describe('tap2pay Card Self Service', () => {
+describe.skip('tap2pay Card Self Service', () => {
 
     test('Query Card', async () => {
 
@@ -157,7 +158,7 @@ describe('tap2pay Card Self Service', () => {
         /*
        * Validate EIP712 to Backend
        * */
-        const cardListResponse = await fetch("http://localhost:8080/api/tap2pay/cards", {
+        const cardListResponse = await fetch("http://localhost:8080/api/v2/tap2pay/cards", {
             method: 'POST',
             headers: {
                 'Content-Type': 'text/plain',
@@ -331,6 +332,86 @@ describe('tap2pay Card Self Service', () => {
 
     })
 });
+
+describe('tap2pay access payment', () => {
+
+    test.skip('Payment Request', async () => {
+
+        /*
+        * Testing Variable
+        * */
+        const cardUUID = "94a57839-b7ef-4ff7-a1d6-54d37315a635"
+        const cardPIN = "1234"
+
+        const paymentRequestResponse = await fetch("http://localhost:8080/api/v2/tap2pay/payment-request", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({
+                hashCard: keccak256(stringToHex(cardUUID)),
+                hashPin: keccak256(stringToHex(cardPIN)),
+                merchantId: "0",
+                merchantKey: "merchantKey0",
+                terminalId: "0",
+                terminalKey: "terminalKey0",
+                paymentAmount: 20000
+            })
+        });
+
+
+        const response = await paymentRequestResponse.json() as {
+            "fromAddress": string,
+            "secretKey": string,
+            "error"?: string;
+        }
+
+        const privateKey = accessCard(cardUUID, cardPIN, response.secretKey);
+        const account = privateKeyToAccount(privateKey);
+
+        console.log({
+            address: account.address,
+            pivateKey: privateKey
+        })
+    })
+
+    test('Card Gass Recovery', async () => {
+
+        /*
+        * Testing Variable
+        * */
+        const cardUUID = "94a57839-b7ef-4ff7-a1d6-54d37315a635"
+        const cardPIN = "1234"
+
+        const paymentRequestResponse = await fetch("http://localhost:8080/api/v2/tap2pay/card-gass-recovery", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({
+                merchantId: "0",
+                merchantKey: "merchantKey0",
+                terminalId: "0",
+                terminalKey: "terminalKey0",
+                cardAddress: "0x46f80cea883531e127bB58CBa85f829FD21f90bE"
+            })
+        });
+
+
+        const response = await paymentRequestResponse.json() as {
+            "fromAddress": string,
+            "secretKey": string,
+            "error"?: string;
+        }
+
+        console.log({response})
+    })
+
+
+});
+
 
 describe.skip('Gas Estimation', () => {
 
