@@ -1,0 +1,20 @@
+{
+  "name": "jest-started",
+  "scripts": {
+    "test": "jest"
+  },
+  "type": "module",
+  "devDependencies": {
+    "@jest/globals": "^30.0.5",
+    "@types/bun": "latest",
+    "@types/jest": "^30.0.0",
+    "dotenv": "^17.2.1",
+    "jest": "^30.0.5",
+    "ts-jest": "^29.4.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "viem": "^2.33.1"
+  }
+}
