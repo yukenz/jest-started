@@ -16,6 +16,9 @@ describe('Payment EDC Client Side', () => {
         const cardUUID = "94a57839-b7ef-4ff7-a1d6-54d37315a635"
         const cardPIN = "1234"
 
+        const hashCard = keccak256(stringToHex(cardUUID));
+        const hashPin = keccak256(stringToHex(cardPIN));
+
         const paymentRequestResponse = await fetch("http://localhost:8080/api/v2/tap2pay/payment-request", {
             method: 'POST',
             headers: {
@@ -23,8 +26,8 @@ describe('Payment EDC Client Side', () => {
                 'Accept': 'application/json',
             },
             body: JSON.stringify({
-                hashCard: keccak256(stringToHex(cardUUID)),
-                hashPin: keccak256(stringToHex(cardPIN)),
+                hashCard,
+                hashPin,
                 merchantId: "0",
                 merchantKey: "merchantKey0",
                 terminalId: "0",
@@ -51,6 +54,8 @@ describe('Payment EDC Client Side', () => {
             cardPublicKey: cardAccount.publicKey
         })
 
+        const ethSignMessage = await cardAccount.signMessage({message: `CARD_GASS_RECOVERY|${hashCard}|${hashPin}|0|merchantKey0|0|terminalKey0`});
+
         const cardGassRecoveryResponse = await fetch("http://localhost:8080/api/v2/tap2pay/card-gass-recovery", {
             method: 'POST',
             headers: {
@@ -62,7 +67,11 @@ describe('Payment EDC Client Side', () => {
                 merchantKey: "merchantKey0",
                 terminalId: "0",
                 terminalKey: "terminalKey0",
-                cardAddress: "0x46f80cea883531e127bB58CBa85f829FD21f90bE"
+                hashCard,
+                hashPin,
+                ethSignMessage,
+                ownerAddress: paymentRequestResult.fromAddress,
+                cardAddress: cardAccount.address,
             })
         });
 
