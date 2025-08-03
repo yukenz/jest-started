@@ -1,11 +1,11 @@
 import {describe, test} from '@jest/globals';
-import {createTestClient, http, keccak256, publicActions, stringToHex, walletActions} from 'viem'
-import {foundry} from 'viem/chains'
+import {keccak256, stringToHex} from 'viem'
 import {privateKeyToAccount} from "viem/accounts";
 import {eip712abi} from "../src/eip712abi.ts";
 import {domain, types} from "../src/eip712-walle.ts";
 import {accessCard} from "../src/tap2payhelper.ts";
 import {idrcAbi, idrcContract} from "../src/idrc-abi.ts";
+import {backendHost, createClientFromPrivateKey} from "../src/create-client.ts";
 
 // API yang digunakan untuk web Card Management
 describe('Card Management Client Side', () => {
@@ -16,7 +16,6 @@ describe('Card Management Client Side', () => {
         /*
        * Testing Variable
        * */
-        const account = privateKeyToAccount('0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80')
         const cardUUID = "94a57839-b7ef-4ff7-a1d6-54d37315a635"
         const cardPIN = "1234"
 
@@ -24,15 +23,7 @@ describe('Card Management Client Side', () => {
         /*
         * Testing Component
         * */
-        const testClient = createTestClient({
-            account,
-            chain: foundry,
-            mode: 'anvil',
-            transport: http(),
-        })
-            .extend(publicActions)
-            .extend(walletActions)
-
+        const testClient = createClientFromPrivateKey('0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80');
 
         /*
         * Testing Sign EIP712
@@ -47,7 +38,7 @@ describe('Card Management Client Side', () => {
             hashPin: `0x${string}`;
         };
 
-        const signature = await account.signTypedData({
+        const signature = await testClient.signTypedData({
             domain,
             types,
             primaryType: 'CardSelfService',
@@ -67,22 +58,22 @@ describe('Card Management Client Side', () => {
 
         console.log({
             recoveredAddress,
-            signerAddress: account.address
+            signerAddress: testClient.account.address
         })
 
-        expect(recoveredAddress).toEqual(account.address)
+        expect(recoveredAddress).toEqual(testClient.account.address)
 
         /*
        * Validate EIP712 to Backend
        * */
-        const cardAccessResponse = await fetch("http://localhost:8080/api/v2/tap2pay/card-access", {
+        const cardAccessResponse = await fetch(backendHost + "/api/v2/tap2pay/card-access", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'text/plain',
             },
             body: JSON.stringify({
-                signerAddress: account.address,
+                signerAddress: testClient.account.address,
                 hashCard: message.hashCard,
                 hashPin: message.hashPin,
                 ethSignMessage: signature
@@ -110,7 +101,7 @@ describe('Card Management Client Side', () => {
         });
 
         console.log({erc20ApproveTrxHash})
-
+        expect(erc20ApproveTrxHash).not.toBeNull();
     })
 
 

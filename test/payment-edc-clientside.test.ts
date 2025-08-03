@@ -1,9 +1,8 @@
 import {describe, test} from '@jest/globals';
-import {createTestClient, http, keccak256, publicActions, stringToHex, walletActions} from 'viem'
-import {privateKeyToAccount} from "viem/accounts";
+import {keccak256, stringToHex} from 'viem'
 import {accessCard} from "../src/tap2payhelper.ts";
 import {idrcAbi, idrcContract} from "../src/idrc-abi.ts";
-import {foundry} from "viem/chains";
+import {backendHost, createClientFromPrivateKey} from "../src/create-client.ts";
 
 // API yang digunakan untuk EDC
 describe('Payment EDC Client Side', () => {
@@ -19,7 +18,7 @@ describe('Payment EDC Client Side', () => {
         const hashCard = keccak256(stringToHex(cardUUID));
         const hashPin = keccak256(stringToHex(cardPIN));
 
-        const paymentRequestResponse = await fetch("http://localhost:8080/api/v2/tap2pay/payment-request", {
+        const paymentRequestResponse = await fetch(backendHost + "/api/v2/tap2pay/payment-request", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -45,22 +44,22 @@ describe('Payment EDC Client Side', () => {
         }
         console.log({paymentRequestResult})
 
-        const privateKey = accessCard(cardUUID, cardPIN, paymentRequestResult.secretKey);
-        const cardAccount = privateKeyToAccount(privateKey);
+        const cardPrivateKey = accessCard(cardUUID, cardPIN, paymentRequestResult.secretKey);
+        const cardTestClient = createClientFromPrivateKey(cardPrivateKey);
 
         console.log({
-            cardAddress: cardAccount.address,
-            cardPrivateKey: privateKey,
-            cardPublicKey: cardAccount.publicKey
+            cardAddress: cardTestClient.account.address,
+            cardPrivateKey: cardPrivateKey,
+            cardPublicKey: cardTestClient.account.publicKey
         })
 
-        const ethSignMessage = await cardAccount.signMessage({message: `CARD_GASS_RECOVERY|${hashCard}|${hashPin}|0|merchantKey0|0|terminalKey0`});
+        const ethSignMessage = await cardTestClient.signMessage({message: `CARD_GASS_RECOVERY|${hashCard}|${hashPin}|0|merchantKey0|0|terminalKey0`});
 
-        const cardGassRecoveryResponse = await fetch("http://localhost:8080/api/v2/tap2pay/card-gass-recovery", {
+        const cardGassRecoveryResponse = await fetch(backendHost + "/api/v2/tap2pay/card-gass-recovery", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'application/json',
+                'Accept': 'text/plain',
             },
             body: JSON.stringify({
                 merchantId: "0",
@@ -71,7 +70,7 @@ describe('Payment EDC Client Side', () => {
                 hashPin,
                 ethSignMessage,
                 ownerAddress: paymentRequestResult.fromAddress,
-                cardAddress: cardAccount.address,
+                cardAddress: cardTestClient.account.address,
             })
         });
 
@@ -83,16 +82,7 @@ describe('Payment EDC Client Side', () => {
         console.log({cardGassRecoveryResult})
 
         // Settle Payment / transferFrom
-        const testClient = createTestClient({
-            account: cardAccount,
-            chain: foundry,
-            mode: 'anvil',
-            transport: http(),
-        })
-            .extend(publicActions)
-            .extend(walletActions)
-
-        const erc20TransferFromTrxHash = await testClient.writeContract({
+        const erc20TransferFromTrxHash = await cardTestClient.writeContract({
             address: idrcContract,
             abi: idrcAbi,
             functionName: 'transferFrom',

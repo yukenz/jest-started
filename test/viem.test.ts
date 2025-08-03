@@ -1,5 +1,5 @@
 import {describe, test} from '@jest/globals';
-import {createTestClient, erc20Abi, formatUnits, http, publicActions, walletActions} from 'viem'
+import {createTestClient, erc20Abi, formatUnits, http, keccak256, publicActions, toHex, walletActions} from 'viem'
 import {foundry} from 'viem/chains'
 import {privateKeyToAccount} from "viem/accounts";
 import {eip712abi} from "../src/eip712abi.ts";
@@ -163,3 +163,13 @@ describe.skip('Gas Estimation', () => {
     })
 
 })
+
+describe('Tools Test', () => {
+    test('Keccak', async () => {
+
+        const result = keccak256(toHex("01808bd5-8e63-409c-9c66-200e446753bb"));
+        console.log(result)
+    })
+
+})
+

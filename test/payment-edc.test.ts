@@ -2,6 +2,7 @@ import {describe, test} from '@jest/globals';
 import {keccak256, stringToHex} from 'viem'
 import {privateKeyToAccount} from "viem/accounts";
 import {accessCard} from "../src/tap2payhelper.ts";
+import {backendHost} from "../src/create-client.ts";
 
 // API yang digunakan untuk EDC
 describe('Payment EDC', () => {
@@ -15,7 +16,7 @@ describe('Payment EDC', () => {
         const cardUUID = "94a57839-b7ef-4ff7-a1d6-54d37315a635"
         const cardPIN = "1234"
 
-        const paymentRequestResponse = await fetch("http://localhost:8080/api/v2/tap2pay/payment-request", {
+        const paymentRequestResponse = await fetch(backendHost + "/api/v2/tap2pay/payment-request", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -44,44 +45,9 @@ describe('Payment EDC', () => {
 
         console.log({
             address: account.address,
-            pivateKey: privateKey
+            pivateKey: privateKey,
+            secretKey : response.secretKey
         })
     })
-
-    // Digunakan untuk gas sponsorship
-    // Transaksi transferFrom tidak bisa dilanjutkan jika API ini tiak berhasil
-    test('Card Gass Recovery', async () => {
-
-        /*
-        * Testing Variable
-        * */
-        const cardUUID = "94a57839-b7ef-4ff7-a1d6-54d37315a635"
-        const cardPIN = "1234"
-
-        const paymentRequestResponse = await fetch("http://localhost:8080/api/v2/tap2pay/card-gass-recovery", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-            },
-            body: JSON.stringify({
-                merchantId: "0",
-                merchantKey: "merchantKey0",
-                terminalId: "0",
-                terminalKey: "terminalKey0",
-                cardAddress: "0x46f80cea883531e127bB58CBa85f829FD21f90bE"
-            })
-        });
-
-
-        const response = await paymentRequestResponse.json() as {
-            "fromAddress": string,
-            "secretKey": string,
-            "error"?: string;
-        }
-
-        console.log({response})
-    })
-
 
 });
