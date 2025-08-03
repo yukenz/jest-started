@@ -132,7 +132,7 @@ describe('Card Management', () => {
     })
 
     // Mengakses card
-    // API ini mengembalikan secret key yang digunakan untuk build wallet Viem di Clien Side
+    // API ini mengembalikan secret key yang digunakan untuk build wallet Viem di Client Side
     test('Access Card', async () => {
 
         /*
@@ -186,7 +186,7 @@ describe('Card Management', () => {
 
         console.log({
             recoveredAddress,
-            signaerAddress: account.address
+            signerAddress: account.address
         })
 
         expect(recoveredAddress).toEqual(account.address)
