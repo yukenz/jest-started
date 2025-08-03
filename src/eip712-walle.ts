@@ -6,10 +6,6 @@ export const domain = {
 } as const
 
 export const types = {
-    Ticket: [
-        {name: "eventName", type: "string"},
-        {name: "price", type: "uint256"},
-    ],
     CardSelfService: [
         {name: "operation", type: "uint8"},
         {name: "hashCard", type: "bytes32"},
